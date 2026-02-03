@@ -1,0 +1,95 @@
+// Configuração do Banco de Dados (Supabase)
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// UC01 e UC02 - Usuários autenticados via Google
+model User {
+  id            String    @id @default(uuid())
+  googleId      String    @unique
+  email         String    @unique
+  name          String
+  avatarUrl     String?
+  phone         String?
+  address       String?   // Foco no bairro Salobrinho
+  isProvider    Boolean   @default(false) 
+  createdAt     DateTime  @default(now())
+  
+  // Relacionamentos
+  machines      Machine[] // Máquinas que este utilizador possui (se for provedor) 
+  bookings      Booking[] // Agendamentos feitos por este utilizador (como cliente)
+}
+
+// UC03 - Cadastro de Máquinas pelo Provedor 
+model Machine {
+  id             String   @id @default(uuid())
+  providerId     String
+  provider       User     @relation(fields: [providerId], references: [id])
+  name           String   // Nome curto para exibição (ex: "Lavadora Brastemp 10kg")
+  description    String?
+  isWasherDryer  Boolean   @default(false)
+  imageUrl       String?  // Foto da máquina
+  capacityKg     Int
+  pricePerLoad   Decimal  @db.Decimal(10, 2)
+  status         String   @default("available") // available, maintenance, busy
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relacionamentos
+  availabilities MachineAvailability[]
+  bookings       Booking[]
+}
+
+// UC04 - Regras de disponibilidade/horários da máquina 
+model MachineAvailability {
+  id          String   @id @default(uuid())
+  machineId   String
+  machine     Machine  @relation(fields: [machineId], references: [id])
+  dayOfWeek   Int      // 0 (Domingo) a 6 (Sábado)
+  startTime   String   // Ex: "08:00"
+  endTime     String   // Ex: "12:00"
+}
+
+// UC06 - Agendamentos (Booking) 
+model Booking {
+  id            String    @id @default(uuid())
+  clientId      String
+  client        User      @relation(fields: [clientId], references: [id])
+  machineId     String
+  machine       Machine   @relation(fields: [machineId], references: [id])
+  scheduledAt   DateTime
+  
+  // Status: pending, paid, expired, cancelled, finished
+  status        String    @default("pending") 
+  
+  // Relacionamentos
+  payment       Payment?
+  review        Review?
+}
+
+// UC07 - Integração de Pagamento (Mercado Pago)
+model Payment {
+  id              String   @id @default(uuid())
+  bookingId       String   @unique
+  booking         Booking  @relation(fields: [bookingId], references: [id])
+  mpPreferenceId  String?  // ID gerado para o Checkout Pro
+  mpPaymentId     String?  // ID da transação final no Mercado Pago
+  status          String   @default("pending")
+  amount          Decimal  @db.Decimal(10, 2)
+  updatedAt       DateTime @updatedAt
+}
+
+// UC09 - Avaliação do Serviço 
+model Review {
+  id        String   @id @default(uuid())
+  bookingId String   @unique
+  booking   Booking  @relation(fields: [bookingId], references: [id])
+  rating    Int      // 1 a 5
+  comment   String?
+  createdAt DateTime @default(now())
+}
