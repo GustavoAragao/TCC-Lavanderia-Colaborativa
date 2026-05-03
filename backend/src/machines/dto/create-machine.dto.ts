@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsNumber, IsOptional, IsBoolean, Min, IsDecimal } from 'class-validator';
+import { IsNotEmpty, IsString, IsOptional, IsBoolean, Min, IsDecimal, IsInt } from 'class-validator';
 
 export class CreateMachineDto {
   @ApiProperty({ 
@@ -22,7 +22,7 @@ export class CreateMachineDto {
     description: 'Capacidade em kilograms', 
     example: 12 
   })
-  @IsNumber()
+  @IsInt()
   @Min(1, { message: 'A capacidade deve ser de pelo menos 1kg.' })
   capacityKg: number;
 
@@ -40,6 +40,24 @@ export class CreateMachineDto {
   })
   @IsBoolean()
   isWasherDryer: boolean;
+
+  @ApiProperty({ 
+    description: 'Tempo padrão do ciclo de lavagem (em minutos)', 
+    example: 45,
+    default: 30
+  })
+  @IsInt({ message: 'A duração da lavagem deve ser um número inteiro.' })
+  @Min(1, { message: 'A duração mínima é de 1 minuto.' })
+  washDuration: number;
+
+  @ApiPropertyOptional({ 
+    description: 'Tempo do ciclo completo (lavar + secar) em minutos. Obrigatório se isWasherDryer for true.', 
+    example: 150 
+  })
+  @IsOptional()
+  @IsInt({ message: 'A duração do ciclo completo deve ser um número inteiro.' })
+  @Min(1)
+  fullCycleDuration?: number;
 
   @ApiPropertyOptional({ 
     description: 'URL da imagem da máquina', 
