@@ -1,9 +1,10 @@
-import { Controller, Post, Body, Get } from '@nestjs/common';
+import { Controller, Post, Body, Get, Patch, Delete, Param, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { MachinesService } from './machines.service';
 import { CreateMachineDto } from './dto/create-machine.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { JwtPayload } from 'src/auth/auth.service';
+import { UpdateMachineDto } from './dto/update-machine.dto';
 
 @ApiTags('máquinas')
 @ApiBearerAuth()
@@ -23,7 +24,11 @@ export class MachinesController {
     @Body() createMachineDto: CreateMachineDto,
     @CurrentUser() user : JwtPayload, 
   ) {
-    return this.machinesService.create(createMachineDto, user.sub);
+    const result = await this.machinesService.create(createMachineDto, user.sub);
+    if ('error' in result && result.error === 'MISSING_FULL_CYCLE_DURATION') 
+      throw new BadRequestException('Máquinas Lava e Seca precisam de uma duração para o ciclo completo.');
+    
+    return result
   }
 
   @Get()
@@ -35,4 +40,56 @@ export class MachinesController {
   async findAll() {
     return this.machinesService.findAll();
   }
+  
+  @Get('me')
+  @ApiOperation({ summary: 'Listar máquinas do usuario logado' })
+  async findMyMachines(@CurrentUser() user: JwtPayload) {
+    return this.machinesService.findByProvider(user.sub);
+  }
+
+  @Get(':id')
+  @ApiOperation({ 
+    summary: 'Buscar uma máquina pelo ID', 
+    description: 'Retorna os detalhes de uma máquina específica através do seu identificador único.' 
+  })
+  @ApiResponse({ status: 200, description: 'Máquina encontrada com sucesso.' })
+  @ApiResponse({ status: 404, description: 'Máquina não encontrada.' })
+  async findOne(@Param('id') id: string) {
+    const machine = await this.machinesService.findOne(id);
+
+    if (!machine) {
+      throw new NotFoundException('Máquina não encontrada');
+    }
+
+    return machine;
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Atualizar uma máquina' })
+  @ApiResponse({ status: 200, description: 'Atualizado com sucesso' })
+  @ApiResponse({ status: 403, description: 'Você não é o dono' })
+  async update(
+    @Param('id') id: string, 
+    @Body() updateMachineDto: UpdateMachineDto,
+    @CurrentUser() user: JwtPayload
+  ) {
+    const result = await this.machinesService.update(id, updateMachineDto, user.sub);
+
+    if (result.error === 'NOT_FOUND') throw new NotFoundException('Máquina não encontrada');
+    if (result.error === 'FORBIDDEN') throw new ForbiddenException('Acesso negado a esta máquina');
+
+    return result.data;
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Remover uma máquina' })
+  async remove(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
+    const result = await this.machinesService.remove(id, user.sub);
+
+    if (result.error === 'NOT_FOUND') throw new NotFoundException('Máquina não encontrada');
+    if (result.error === 'FORBIDDEN') throw new ForbiddenException('Acesso negado');
+
+    return { message: 'Máquina removida com sucesso' };
+  }
+  
 }

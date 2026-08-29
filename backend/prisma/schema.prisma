@@ -2,6 +2,7 @@
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
@@ -36,7 +37,11 @@ model Machine {
   imageUrl       String?  // Foto da máquina
   capacityKg     Int
   pricePerLoad   Decimal  @db.Decimal(10, 2)
-  status         String   @default("available") // available, maintenance, busy
+  status         String   @default("available") // available, maintenance
+  
+  washDuration    Int      @default(30)  // Tempo padrão para lavar (em minutos)
+  fullCycleDuration Int?                 // Tempo lavar + secar (só preenche se for lava e seca)
+  
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -49,7 +54,7 @@ model Machine {
 model MachineAvailability {
   id          String   @id @default(uuid())
   machineId   String
-  machine     Machine  @relation(fields: [machineId], references: [id])
+  machine     Machine  @relation(fields: [machineId], references: [id], onDelete: Cascade)
   dayOfWeek   Int      // 0 (Domingo) a 6 (Sábado)
   startTime   String   // Ex: "08:00"
   endTime     String   // Ex: "12:00"
@@ -63,8 +68,10 @@ model Booking {
   machineId     String
   machine       Machine   @relation(fields: [machineId], references: [id])
   scheduledAt   DateTime
+  type            String   @default("WASH") // "WASH" ou "FULL_CYCLE"
+  durationMinutes Int
   
-  // Status: pending, paid, expired, cancelled, finished
+  // Status: pending, confirmed, expired, cancelled, finished
   status        String    @default("pending") 
   
   // Relacionamentos
