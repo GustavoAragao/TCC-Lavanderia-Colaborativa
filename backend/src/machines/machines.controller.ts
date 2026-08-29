@@ -47,6 +47,23 @@ export class MachinesController {
     return this.machinesService.findByProvider(user.sub);
   }
 
+  @Get(':id')
+  @ApiOperation({ 
+    summary: 'Buscar uma máquina pelo ID', 
+    description: 'Retorna os detalhes de uma máquina específica através do seu identificador único.' 
+  })
+  @ApiResponse({ status: 200, description: 'Máquina encontrada com sucesso.' })
+  @ApiResponse({ status: 404, description: 'Máquina não encontrada.' })
+  async findOne(@Param('id') id: string) {
+    const machine = await this.machinesService.findOne(id);
+
+    if (!machine) {
+      throw new NotFoundException('Máquina não encontrada');
+    }
+
+    return machine;
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: 'Atualizar uma máquina' })
   @ApiResponse({ status: 200, description: 'Atualizado com sucesso' })

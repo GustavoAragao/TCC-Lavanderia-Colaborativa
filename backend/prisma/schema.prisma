@@ -54,7 +54,7 @@ model Machine {
 model MachineAvailability {
   id          String   @id @default(uuid())
   machineId   String
-  machine     Machine  @relation(fields: [machineId], references: [id])
+  machine     Machine  @relation(fields: [machineId], references: [id], onDelete: Cascade)
   dayOfWeek   Int      // 0 (Domingo) a 6 (Sábado)
   startTime   String   // Ex: "08:00"
   endTime     String   // Ex: "12:00"
@@ -71,7 +71,7 @@ model Booking {
   type            String   @default("WASH") // "WASH" ou "FULL_CYCLE"
   durationMinutes Int
   
-  // Status: pending, paid, expired, cancelled, finished
+  // Status: pending, confirmed, expired, cancelled, finished
   status        String    @default("pending") 
   
   // Relacionamentos

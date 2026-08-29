@@ -24,6 +24,8 @@ class AuthService extends BaseService {
       // Salva o Token e o Usuário (como string)
       await SecureStore.setItemAsync('user_token', data.access_token);
       await SecureStore.setItemAsync('user_data', JSON.stringify(data.user));
+
+      //console.log("MEU TOKEN PARA O SWAGGER:", data.access_token);
     }
     
     return data;

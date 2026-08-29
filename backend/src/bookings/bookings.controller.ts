@@ -41,8 +41,8 @@ export class BookingsController {
         };
     }
 
-    @Get('my-bookings')
-    @ApiOperation({ summary: 'Listar meus agendamentos' })
+    @Get('me')
+    @ApiOperation({ summary: 'Listar agendamentos do usuario logado' })
     async findAll(@CurrentUser() user: JwtPayload) {
         const result = await this.bookingsService.findAllByUser(user.sub);
         return result.data;
@@ -90,7 +90,7 @@ export class BookingsController {
         if (!result.success) {
             if (result.error === 'BOOKING_NOT_FOUND') throw new NotFoundException('Agendamento não encontrado.');
             if (result.error === 'FORBIDDEN') throw new ForbiddenException('Apenas o dono da máquina pode finalizar o serviço.');
-            if (result.error === 'INVALID_STATUS') throw new BadRequestException('Apenas agendamentos pagos podem ser finalizados.');
+            if (result.error === 'INVALID_STATUS') throw new BadRequestException('Apenas agendamentos pagos/confirmados podem ser finalizados.');
             throw new BadRequestException('Erro ao finalizar agendamento.');
         }
         return { message: 'Serviço finalizado com sucesso!' };

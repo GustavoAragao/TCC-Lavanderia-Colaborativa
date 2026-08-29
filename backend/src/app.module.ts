@@ -9,9 +9,10 @@ import { PaymentsModule } from './payments/payments.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthGuard } from './auth/guards/auth.guard';
 import { APP_GUARD } from '@nestjs/core';
+import { ReviewsModule } from './reviews/reviews.module';
 
 @Module({
-  imports: [AuthModule, UsersModule, MachinesModule, BookingsModule, PaymentsModule, PrismaModule],
+  imports: [AuthModule, UsersModule, MachinesModule, BookingsModule, PaymentsModule, ReviewsModule, PrismaModule],
   controllers: [AppController],
   providers: [
     AppService,

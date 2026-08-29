@@ -10,7 +10,7 @@ import { Booking } from '@prisma/client';
 export class BookingsService {
     constructor(private prisma: PrismaService, private paymentsService: PaymentsService) { }
 
-    async create(userId: string, dto: CreateBookingDto): Promise<ServiceResult<Booking>> {
+    async create(userId: string, dto: CreateBookingDto): Promise<ServiceResult<Booking & { checkoutUrl: string }>> {
         try {
 
             const { machineId, scheduledAt, type } = dto;
@@ -48,8 +48,9 @@ export class BookingsService {
         const bookings = await this.prisma.booking.findMany({
             where: { clientId: userId },
             include: {
-                machine: { select: { name: true, imageUrl: true } }, // Traz o nome da máquina junto
-                payment: true // Traz o status do pagamento
+                machine: { select: { provider: true, name: true, imageUrl: true } }, // Traz o nome da máquina junto
+                payment: true, // Traz o status do pagamento
+                review: true,
             },
             orderBy: { scheduledAt: 'desc' } // Os mais recentes primeiro
         });
@@ -66,11 +67,10 @@ export class BookingsService {
                 }
             },
             include: {
-                client: {
-                select: { name: true, avatarUrl: true } // Para o provedor saber quem é o cliente
-                },
+                client:  true, // Para o provedor saber quem é o cliente
                 machine: true,
-                payment: true
+                payment: true,
+                review: true,
             },
             orderBy: {
                 scheduledAt: 'desc' // Mais recentes primeiro
@@ -137,13 +137,15 @@ export class BookingsService {
         if (booking.machine.providerId !== userId) {
             return { success: false, error: 'FORBIDDEN' };
         }
-        // Só permite finalizar se já estiver pago
-        if (booking.status !== 'paid') {
+        // Só permite finalizar se já estiver confirmado
+        if (booking.status !== 'confirmed') {
             return { success: false, error: 'INVALID_STATUS' };
         }
 
         // Atualiza o status
         await this.prisma.booking.update({ where: { id: bookingId }, data: { status: 'finished' }, });
+
+        //Fazer Lógica de repasse do dinheiro para o provedor posteriormente
 
         return { success: true };
     }

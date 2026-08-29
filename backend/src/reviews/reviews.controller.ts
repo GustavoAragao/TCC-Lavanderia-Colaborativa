@@ -1,5 +1,5 @@
 // src/reviews/reviews.controller.ts
-import { Controller, Post, Body, Get, Param, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, BadRequestException, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ReviewsService } from './reviews.service';
 import { CreateReviewDto } from './dto/create-review.dto';
@@ -17,7 +17,27 @@ export class ReviewsController {
   async create(
     @CurrentUser() user: JwtPayload, 
     @Body() dto: CreateReviewDto) {
-    return this.reviewsService.create(user.sub, dto);
+    
+      const result = await this.reviewsService.create(user.sub, dto);
+    if (!result.success) {
+      switch (result.error) {
+        case 'BOOKING_NOT_FOUND':
+            throw new NotFoundException('Agendamento não encontrado.');
+        case 'FORBIDDEN':
+            throw new ForbiddenException('Você não tem permissão para avaliar este serviço.');
+        case 'INVALID_STATUS':
+            throw new BadRequestException('Apenas serviços finalizados podem ser avaliados.');
+        case 'ALREADY_REVIEWED':
+            throw new ConflictException('Você já avaliou este serviço.');
+        default:
+            throw new BadRequestException('Erro ao processar a avaliação.');
+      }
+    }
+
+    return {
+        message: 'Avaliação registrada com sucesso!',
+        data: result.data,
+    };
   }
 
   @Get('machine/:machineId')

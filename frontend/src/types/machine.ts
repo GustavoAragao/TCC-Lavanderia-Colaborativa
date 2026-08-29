@@ -8,6 +8,8 @@ export interface Machine {
   capacityKg: number;
   pricePerLoad: string; // Decimal no Prisma, recebido como string no JSON
   status: 'available' | 'maintenance' | 'busy'; // Conforme o default do schema 
+  washDuration: number; // default: 30
+  fullCycleDuration?: number | null; // Só se for lava e seca
   createdAt: string;
   updatedAt: string;
   
@@ -22,7 +24,7 @@ export interface Machine {
 export interface MachineAvailability {
   id: string;
   machineId: string;
-  dayOfWeek: number; // 0 a 6
+  dayOfWeek: number; // 0 a 6 (domingo ... sábado)
   startTime: string; // Ex: "08:00"
   endTime: string;   // Ex: "12:00"
 }

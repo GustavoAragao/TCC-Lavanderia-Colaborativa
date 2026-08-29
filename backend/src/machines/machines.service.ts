@@ -23,7 +23,7 @@ export class MachinesService {
     return this.prisma.machine.findMany({
       include: {
         provider: {
-          select: { name: true, email: true }, // Traz dados básicos do dono da máquina
+          select: { name: true, email: true, phone: true, address: true}, // Traz dados básicos do dono da máquina
         },
       },
     });
