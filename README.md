@@ -1,4 +1,4 @@
-# 🧺 Lavanderia Colaborativa — Salobrinho
+# Lavanderia Colaborativa — Salobrinho
 
 Trabalho de Conclusão de Curso (TCC) — Plataforma colaborativa de lavanderia para o bairro Salobrinho.
 
